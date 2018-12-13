@@ -342,8 +342,27 @@ namespace ErikEJ.SqlCeScripting
 
         public List<string> GetAllTableNamesForExclusion()
         {
+            //return ExecuteReader(
+            //    "SELECT S.name + '.' + T.name  from sys.tables T INNER JOIN sys.schemas S ON T.schema_id = S.schema_id WHERE [type] = 'U' AND is_ms_shipped = 0 ORDER BY S.name, T.[name];"
+            //    , new AddToListDelegate<string>(AddToListString));
             return ExecuteReader(
-                "SELECT S.name + '.' + T.name  from sys.tables T INNER JOIN sys.schemas S ON T.schema_id = S.schema_id WHERE [type] = 'U' AND is_ms_shipped = 0 ORDER BY S.name, T.[name];"
+                @"SELECT * FROM
+                (
+	                SELECT 
+	                S.name + '.' + T.name [Name]
+	                FROM sys.tables T 
+	                INNER JOIN sys.schemas S ON T.SCHEMA_ID = S.SCHEMA_ID 
+	                WHERE [type] = 'U' AND is_ms_shipped = 0 
+
+	                UNION ALL
+
+	                SELECT 
+	                S.name + '.' + T.name [Name]
+	                FROM sys.VIEWS T 
+	                INNER JOIN sys.schemas S ON T.SCHEMA_ID = S.SCHEMA_ID 
+	                WHERE [type] = 'V' AND is_ms_shipped = 0
+                ) t
+                ORDER BY [Name];"
                 , new AddToListDelegate<string>(AddToListString));
         }
 
@@ -369,48 +388,68 @@ namespace ErikEJ.SqlCeScripting
 
         public List<Column> GetAllColumns()
         {
-            return ExecuteReader(@"SELECT COLUMN_NAME, col.IS_NULLABLE, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, 
-                AUTOINC_INCREMENT =  CASE cols.is_identity  WHEN 0 THEN 0 WHEN 1 THEN IDENT_INCR('[' + col.TABLE_SCHEMA + '].[' + col.TABLE_NAME + ']')  END, 
-                AUTOINC_SEED =     CASE cols.is_identity WHEN 0 THEN 0 WHEN 1 THEN IDENT_SEED('[' + col.TABLE_SCHEMA + '].[' + col.TABLE_NAME + ']')  END, 
-                COLUMN_HASDEFAULT =  CASE WHEN col.COLUMN_DEFAULT IS NULL THEN CAST(0 AS bit) ELSE CAST (1 AS bit) END, COLUMN_DEFAULT, 
-                COLUMN_FLAGS = CASE cols.is_rowguidcol WHEN 0 THEN 0 ELSE 378 END,
-                NUMERIC_SCALE, col.TABLE_NAME, 
-                AUTOINC_NEXT = CASE cols.is_identity WHEN 0 THEN 0 WHEN 1 THEN IDENT_CURRENT('[' + col.TABLE_SCHEMA + '].[' + col.TABLE_NAME + ']') + IDENT_INCR('[' + col.TABLE_SCHEMA + '].[' + col.TABLE_NAME + ']') END, 
-                col.TABLE_SCHEMA, col.ORDINAL_POSITION,
-                CASE_SENSITIVE = CASE WHEN collations.description like '%case-sensitive%' THEN 1 WHEN collations.description like '%case-insensitive%' THEN 0 END
-                FROM INFORMATION_SCHEMA.COLUMNS col  
-                JOIN sys.columns cols on col.COLUMN_NAME = cols.name 
-                AND cols.object_id = OBJECT_ID('[' + col.TABLE_SCHEMA + '].[' + col.TABLE_NAME + ']')  
-                JOIN sys.schemas schms on schms.name = col.TABLE_SCHEMA                
-                JOIN sys.tables tab ON col.TABLE_NAME = tab.name and tab.schema_id = schms.schema_id 
-                LEFT JOIN sys.fn_helpcollations() collations ON collations.name = col.COLLATION_NAME
-                WHERE SUBSTRING(COLUMN_NAME, 1,5) <> '__sys' 
-                AND tab.type = 'U' AND is_ms_shipped = 0 
-                AND (cols.is_computed = 0)
-                AND DATA_TYPE <> 'sql_variant' 
-				UNION 
-                SELECT COLUMN_NAME, col.IS_NULLABLE, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, 
-                AUTOINC_INCREMENT =  CASE cols.is_identity  WHEN 0 THEN 0 WHEN 1 THEN IDENT_INCR('[' + col.TABLE_SCHEMA + '].[' + col.TABLE_NAME + ']')  END, 
-                AUTOINC_SEED =     CASE cols.is_identity WHEN 0 THEN 0 WHEN 1 THEN IDENT_SEED('[' + col.TABLE_SCHEMA + '].[' + col.TABLE_NAME + ']')  END, 
-                COLUMN_HASDEFAULT =  CASE WHEN col.COLUMN_DEFAULT IS NULL THEN CAST(0 AS bit) ELSE CAST (1 AS bit) END, COLUMN_DEFAULT, 
-                COLUMN_FLAGS = CASE cols.is_rowguidcol WHEN 0 THEN 0 ELSE 378 END,
-                NUMERIC_SCALE, col.TABLE_NAME, 
-                AUTOINC_NEXT = CASE cols.is_identity WHEN 0 THEN 0 WHEN 1 THEN IDENT_CURRENT('[' + col.TABLE_SCHEMA + '].[' + col.TABLE_NAME + ']') + IDENT_INCR('[' + col.TABLE_SCHEMA + '].[' + col.TABLE_NAME + ']') END, 
-                col.TABLE_SCHEMA, col.ORDINAL_POSITION,
-                CASE_SENSITIVE = CASE WHEN collations.description like '%case-sensitive%' THEN 1 WHEN collations.description like '%case-insensitive%' THEN 0 END
-                FROM INFORMATION_SCHEMA.COLUMNS col  
-                JOIN sys.columns cols on col.COLUMN_NAME = cols.name 
-                AND cols.object_id = OBJECT_ID('[' + col.TABLE_SCHEMA + '].[' + col.TABLE_NAME + ']')  
-                JOIN sys.schemas schms on schms.name = col.TABLE_SCHEMA                
-                JOIN sys.tables tab ON col.TABLE_NAME = tab.name and tab.schema_id = schms.schema_id 
-                LEFT JOIN sys.fn_helpcollations() collations ON collations.name = col.COLLATION_NAME
-			    JOIN sys.computed_columns cc on cc.object_id = cols.object_id 
-                WHERE SUBSTRING(COLUMN_NAME, 1,5) <> '__sys' 
-                AND tab.type = 'U' AND is_ms_shipped = 0 
-                AND (cc.is_computed = 1 AND cc.is_persisted = 1)
-                AND DATA_TYPE <> 'sql_variant' 
-				ORDER BY col.TABLE_NAME, col.ORDINAL_POSITION ASC
-"
+            return ExecuteReader(@"
+                    SELECT COLUMN_NAME, col.IS_NULLABLE, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, 
+                    AUTOINC_INCREMENT =  CASE cols.is_identity  WHEN 0 THEN 0 WHEN 1 THEN IDENT_INCR('[' + col.TABLE_SCHEMA + '].[' + col.TABLE_NAME + ']')  END, 
+                    AUTOINC_SEED =     CASE cols.is_identity WHEN 0 THEN 0 WHEN 1 THEN IDENT_SEED('[' + col.TABLE_SCHEMA + '].[' + col.TABLE_NAME + ']')  END, 
+                    COLUMN_HASDEFAULT =  CASE WHEN col.COLUMN_DEFAULT IS NULL THEN CAST(0 AS bit) ELSE CAST (1 AS bit) END, COLUMN_DEFAULT, 
+                    COLUMN_FLAGS = CASE cols.is_rowguidcol WHEN 0 THEN 0 ELSE 378 END,
+                    NUMERIC_SCALE, col.TABLE_NAME, 
+                    AUTOINC_NEXT = CASE cols.is_identity WHEN 0 THEN 0 WHEN 1 THEN IDENT_CURRENT('[' + col.TABLE_SCHEMA + '].[' + col.TABLE_NAME + ']') + IDENT_INCR('[' + col.TABLE_SCHEMA + '].[' + col.TABLE_NAME + ']') END, 
+                    col.TABLE_SCHEMA, col.ORDINAL_POSITION,
+                    CASE_SENSITIVE = CASE WHEN collations.description like '%case-sensitive%' THEN 1 WHEN collations.description like '%case-insensitive%' THEN 0 END
+                    FROM INFORMATION_SCHEMA.COLUMNS col  
+                    JOIN sys.columns cols on col.COLUMN_NAME = cols.name 
+                    AND cols.object_id = OBJECT_ID('[' + col.TABLE_SCHEMA + '].[' + col.TABLE_NAME + ']')  
+                    JOIN sys.schemas schms on schms.name = col.TABLE_SCHEMA                
+                    JOIN sys.tables tab ON col.TABLE_NAME = tab.name and tab.schema_id = schms.schema_id 
+                    LEFT JOIN sys.fn_helpcollations() collations ON collations.name = col.COLLATION_NAME
+                    WHERE SUBSTRING(COLUMN_NAME, 1,5) <> '__sys' 
+                    AND tab.type = 'U' AND is_ms_shipped = 0 
+                    AND (cols.is_computed = 0)
+                    AND DATA_TYPE <> 'sql_variant' 
+                    UNION 
+                    SELECT COLUMN_NAME, col.IS_NULLABLE, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, 
+                    AUTOINC_INCREMENT =  CASE cols.is_identity  WHEN 0 THEN 0 WHEN 1 THEN IDENT_INCR('[' + col.TABLE_SCHEMA + '].[' + col.TABLE_NAME + ']')  END, 
+                    AUTOINC_SEED =     CASE cols.is_identity WHEN 0 THEN 0 WHEN 1 THEN IDENT_SEED('[' + col.TABLE_SCHEMA + '].[' + col.TABLE_NAME + ']')  END, 
+                    COLUMN_HASDEFAULT =  CASE WHEN col.COLUMN_DEFAULT IS NULL THEN CAST(0 AS bit) ELSE CAST (1 AS bit) END, COLUMN_DEFAULT, 
+                    COLUMN_FLAGS = CASE cols.is_rowguidcol WHEN 0 THEN 0 ELSE 378 END,
+                    NUMERIC_SCALE, col.TABLE_NAME, 
+                    AUTOINC_NEXT = CASE cols.is_identity WHEN 0 THEN 0 WHEN 1 THEN IDENT_CURRENT('[' + col.TABLE_SCHEMA + '].[' + col.TABLE_NAME + ']') + IDENT_INCR('[' + col.TABLE_SCHEMA + '].[' + col.TABLE_NAME + ']') END, 
+                    col.TABLE_SCHEMA, col.ORDINAL_POSITION,
+                    CASE_SENSITIVE = CASE WHEN collations.description like '%case-sensitive%' THEN 1 WHEN collations.description like '%case-insensitive%' THEN 0 END
+                    FROM INFORMATION_SCHEMA.COLUMNS col  
+                    JOIN sys.columns cols on col.COLUMN_NAME = cols.name 
+                    AND cols.object_id = OBJECT_ID('[' + col.TABLE_SCHEMA + '].[' + col.TABLE_NAME + ']')  
+                    JOIN sys.schemas schms on schms.name = col.TABLE_SCHEMA                
+                    JOIN sys.tables tab ON col.TABLE_NAME = tab.name and tab.schema_id = schms.schema_id 
+                    LEFT JOIN sys.fn_helpcollations() collations ON collations.name = col.COLLATION_NAME
+                    JOIN sys.computed_columns cc on cc.object_id = cols.object_id 
+                    WHERE SUBSTRING(COLUMN_NAME, 1,5) <> '__sys' 
+                    AND tab.type = 'U' AND is_ms_shipped = 0 
+                    AND (cc.is_computed = 1 AND cc.is_persisted = 1)
+                    AND DATA_TYPE <> 'sql_variant' 
+                    UNION
+                    SELECT COLUMN_NAME, col.IS_NULLABLE, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION, 
+                    AUTOINC_INCREMENT =  CASE cols.is_identity  WHEN 0 THEN 0 WHEN 1 THEN IDENT_INCR('[' + col.TABLE_SCHEMA + '].[' + col.TABLE_NAME + ']')  END, 
+                    AUTOINC_SEED =     CASE cols.is_identity WHEN 0 THEN 0 WHEN 1 THEN IDENT_SEED('[' + col.TABLE_SCHEMA + '].[' + col.TABLE_NAME + ']')  END, 
+                    COLUMN_HASDEFAULT =  CASE WHEN col.COLUMN_DEFAULT IS NULL THEN CAST(0 AS bit) ELSE CAST (1 AS bit) END, COLUMN_DEFAULT, 
+                    COLUMN_FLAGS = CASE cols.is_rowguidcol WHEN 0 THEN 0 ELSE 378 END,
+                    NUMERIC_SCALE, col.TABLE_NAME, 
+                    AUTOINC_NEXT = CASE cols.is_identity WHEN 0 THEN 0 WHEN 1 THEN IDENT_CURRENT('[' + col.TABLE_SCHEMA + '].[' + col.TABLE_NAME + ']') + IDENT_INCR('[' + col.TABLE_SCHEMA + '].[' + col.TABLE_NAME + ']') END, 
+                    col.TABLE_SCHEMA, col.ORDINAL_POSITION,
+                    CASE_SENSITIVE = CASE WHEN collations.description like '%case-sensitive%' THEN 1 WHEN collations.description like '%case-insensitive%' THEN 0 END
+                    FROM INFORMATION_SCHEMA.COLUMNS col  
+                    JOIN sys.columns cols on col.COLUMN_NAME = cols.name 
+                    AND cols.object_id = OBJECT_ID('[' + col.TABLE_SCHEMA + '].[' + col.TABLE_NAME + ']')  
+                    JOIN sys.schemas schms on schms.name = col.TABLE_SCHEMA                
+                    JOIN sys.views vi ON col.TABLE_NAME = vi.name and vi.schema_id = schms.schema_id 
+                    LEFT JOIN sys.fn_helpcollations() collations ON collations.name = col.COLLATION_NAME
+                    WHERE SUBSTRING(COLUMN_NAME, 1,5) <> '__sys' 
+                    AND vi.type = 'V' AND is_ms_shipped = 0 
+                    AND (cols.is_computed = 0)
+                    AND DATA_TYPE <> 'sql_variant' 
+                    ORDER BY col.TABLE_NAME, col.ORDINAL_POSITION ASC"
                 , new AddToListDelegate<Column>(AddToListColumns));
         }
 
