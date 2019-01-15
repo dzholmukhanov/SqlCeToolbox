@@ -1659,7 +1659,7 @@ namespace ErikEJ.SqlCeScripting
                 {
                     _sbScript.Remove(_sbScript.Length - 2, 2);
                     GeneratePrimaryKeys(tableName);
-                    GenerateForeignKeys(tableName);
+                    //GenerateForeignKeys(tableName);
                     _sbScript.AppendFormat("{0});{1}", Environment.NewLine, Environment.NewLine);
                 }
             }
