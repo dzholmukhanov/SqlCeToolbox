@@ -90,17 +90,14 @@ namespace ExportSqlCE
                             generator.GenerateSqlitePrefix();
                             if (includeSchema)
                             {
-                                Console.WriteLine("Generating the tables....");
                                 generator.GenerateTable(false);
                             }
                             if (includeData)
                             {
-                                Console.WriteLine("Generating the data....");
                                 generator.GenerateTableContent(false);
                             }
                             if (includeSchema)
                             {
-                                Console.WriteLine("Generating the indexes....");
                                 generator.GenerateIndex();
                             }
                             generator.GenerateSqliteSuffix();
@@ -110,26 +107,20 @@ namespace ExportSqlCE
                             // The execution below has to be in this sequence
                             if (includeSchema)
                             {
-                                Console.WriteLine("Generating the tables....");
                                 generator.GenerateTable(includeData);
                             }
                             if (includeData)
                             {
-                                Console.WriteLine("Generating the data....");
                                 generator.GenerateTableContent(saveImageFiles);
                             }
                             if (includeSchema)
                             {
-                                Console.WriteLine("Generating the primary keys....");
                                 generator.GeneratePrimaryKeys();
-                                Console.WriteLine("Generating the indexes....");
                                 generator.GenerateIndex();
-                                Console.WriteLine("Generating the foreign keys....");
                                 generator.GenerateForeignKeys();
                             }
                         }
                         Helper.WriteIntoFile(generator.GeneratedScript, outputFileLocation, 1, sqlite);
-                        Console.WriteLine("Sent script to output file(s) : {0} in {1} ms", Helper.FinalFiles, (sw.ElapsedMilliseconds).ToString());
                         return 0;
                     }
                 }
@@ -140,7 +131,6 @@ namespace ExportSqlCE
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("Error: " + ex);
                     return 1;
                 }
             }
@@ -179,10 +169,6 @@ namespace ExportSqlCE
             StringBuilder bld = new StringBuilder();
             Exception inner = e.InnerException;
 
-            if (null != inner)
-            {
-                Console.WriteLine("Inner Exception: " + inner.ToString());
-            }
             // Enumerate the errors to a message box.
             foreach (System.Data.SqlClient.SqlError err in errorCollection)
             {
@@ -190,26 +176,13 @@ namespace ExportSqlCE
                 bld.Append("\n Source    : " + err.Source);
                 bld.Append("\n Number    : " + err.Number);
 
-                Console.WriteLine(bld.ToString());
                 bld.Remove(0, bld.Length);
             }
         }
 
         private static void PrintUsageGuide()
         {
-            Console.WriteLine("Usage : ");
-            Console.WriteLine(" Export2SQLCE.exe [SQL Server Connection String] [output file location] [[exclude]]|[[include]] [[schemaonly]] [[dataonly]] [[saveimages]] [[sqlite]] [[preservedateanddatetime2]] [[keepschema]]");
-            Console.WriteLine(" (exclude, include, schemaonly, dataonly, saveimages, sqlite, keepschema and preservedateanddatetime2 are optional parameters)");
-            Console.WriteLine("");
-            Console.WriteLine("Examples : ");
-            Console.WriteLine(" Export2SQLCE.exe \"Data Source=(local);Initial Catalog=Northwind;Integrated Security=True\" Northwind.sql");
-            Console.WriteLine(" Export2SQLCE.exe \"Data Source=(local);Initial Catalog=Northwind;Integrated Security=True\" Northwind.sql schemaonly");
-            Console.WriteLine(" Export2SQLCE.exe \"Data Source=(local);Initial Catalog=Northwind;Integrated Security=True\" Northwind.sql dataonly");
-            Console.WriteLine(" Export2SQLCE.exe \"Data Source=(local);Initial Catalog=Northwind;Integrated Security=True\" Northwind.sql exclude:dbo.Shippers,dbo.Suppliers");
-            Console.WriteLine(" Export2SQLCE.exe \"Data Source=(local);Initial Catalog=Northwind;Integrated Security=True\" Northwind.sql sqlite");
-            Console.WriteLine(" Export2SQLCE.exe \"Data Source=(local);Initial Catalog=Northwind;Integrated Security=True\" Northwind.sql include:dbo.Shippers,dbo.Suppliers");
-            Console.WriteLine(" Export2SQLCE.exe \"Data Source=(local);Initial Catalog=Northwind;Integrated Security=True\" Northwind.sql include:\"dbo.Shippers:ID=1 OR ID=2,dbo.Suppliers:Title LIKE 'Company%'\" sqlite");
-            Console.WriteLine("");
+            
         }
     }
 }

@@ -32,43 +32,44 @@ namespace ErikEJ.SqlCeScripting
 
         public static void WriteIntoFile(string script, string fileLocation, int increment, bool sqlite)
         {
-            if (increment > -1)
-            {
-                if (!finalFiles.Contains(","))
-                {
-                    finalFiles = string.Empty;
-                }
-                string ext = Path.GetExtension(System.IO.Path.GetFileName(fileLocation));
-                string path = Path.GetDirectoryName(fileLocation);
-                string name = Path.GetFileNameWithoutExtension(fileLocation);
-                fileLocation = Path.Combine(path, name + "_" + increment.ToString("0000" + System.Globalization.CultureInfo.InvariantCulture));
-                if (!string.IsNullOrEmpty(ext))
-                {
-                    fileLocation = fileLocation + ext;
-                    finalFiles = finalFiles + fileLocation + ", ";
-                }
-            }
-            FileStream fs = null;
-            StreamWriter sw = null;
-            try
-            {
-                fs = new FileStream(fileLocation, FileMode.Create, FileAccess.Write, FileShare.Read);
-                System.Text.Encoding encoder = new System.Text.UTF8Encoding(false);
-                if (!sqlite)
-                    encoder = new System.Text.UnicodeEncoding();
+            Console.WriteLine(script);
+            //if (increment > -1)
+            //{
+            //    if (!finalFiles.Contains(","))
+            //    {
+            //        finalFiles = string.Empty;
+            //    }
+            //    string ext = Path.GetExtension(System.IO.Path.GetFileName(fileLocation));
+            //    string path = Path.GetDirectoryName(fileLocation);
+            //    string name = Path.GetFileNameWithoutExtension(fileLocation);
+            //    fileLocation = Path.Combine(path, name + "_" + increment.ToString("0000" + System.Globalization.CultureInfo.InvariantCulture));
+            //    if (!string.IsNullOrEmpty(ext))
+            //    {
+            //        fileLocation = fileLocation + ext;
+            //        finalFiles = finalFiles + fileLocation + ", ";
+            //    }
+            //}
+            //FileStream fs = null;
+            //StreamWriter sw = null;
+            //try
+            //{
+            //    fs = new FileStream(fileLocation, FileMode.Create, FileAccess.Write, FileShare.Read);
+            //    System.Text.Encoding encoder = new System.Text.UTF8Encoding(false);
+            //    if (!sqlite)
+            //        encoder = new System.Text.UnicodeEncoding();
                 
-                sw = new StreamWriter(fs, encoder);
-                fs = null;
-                sw.WriteLine(script);
-                sw.Flush();
-            }
-            finally
-            {
-                if (sw != null)
-                    sw.Close();
-                if (fs != null)
-                    fs.Close();
-            }
+            //    sw = new StreamWriter(fs, encoder);
+            //    fs = null;
+            //    sw.WriteLine(script);
+            //    sw.Flush();
+            //}
+            //finally
+            //{
+            //    if (sw != null)
+            //        sw.Close();
+            //    if (fs != null)
+            //        fs.Close();
+            //}
         }
 
         public static string FixConnectionString(string connectionString, int timeout)

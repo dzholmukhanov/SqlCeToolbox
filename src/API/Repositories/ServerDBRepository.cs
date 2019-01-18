@@ -676,13 +676,11 @@ namespace ErikEJ.SqlCeScripting
             {
                 var commandText = sr.ReadCommand();
                 int i = 1;
-                if (isConsoleApp) Console.WriteLine("Running script commands " + i);
                 while (!string.IsNullOrWhiteSpace(commandText))
                 {
                     RunCommand(commandText);
                     if (isConsoleApp) Console.SetCursorPosition(0, Console.CursorTop - 1);
                     i++;
-                    if (isConsoleApp) Console.WriteLine("Running script commands " + i);
                     commandText = sr.ReadCommand();
                 }
             }
