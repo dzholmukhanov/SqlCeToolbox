@@ -120,7 +120,7 @@ namespace ExportSqlCE
                                 generator.GenerateForeignKeys();
                             }
                         }
-                        Helper.WriteIntoFile(generator.GeneratedScript, outputFileLocation, 1, sqlite);
+                        Helper.WriteIntoFile(generator.GeneratedScript, outputFileLocation, generator.FileCounter, sqlite);
                         return 0;
                     }
                 }
